@@ -1,6 +1,8 @@
 const maxSpeed = 2;
 const maxForce = 0.3;
-const vision = 40;
+const cellVision = 50;
+const virusVision = 30;
+const showVision = false;
 
 class Cell {
   constructor(position) {
@@ -17,12 +19,24 @@ class Cell {
     );
     this.position =
       position ?? createVector(random(windowWidth), random(windowHeight));
-    console.log(this.position, position);
   }
 
-  show() {
-    fill(color(0, 255, 0, 100));
+  show(red, green, blue) {
+    noStroke();
+    fill(color(red, green, blue, 100));
     circle(this.position.x, this.position.y, this.diameter);
+
+    if (showVision) {
+      noFill();
+      strokeWeight(1);
+      stroke(red, green, blue);
+
+      circle(
+        this.position.x,
+        this.position.y,
+        red > 0 ? virusVision : cellVision
+      );
+    }
   }
 
   update() {
@@ -44,12 +58,12 @@ class Cell {
       this.position.y -= window.innerHeight;
   }
 
-  eat(list) {
+  eatNutrients(list) {
     let record = Infinity;
     let closest = null;
     for (let i = 0; i < list.length; i++) {
       const d = this.position.dist(list[i]);
-      if (d > vision) continue;
+      if (d > cellVision) continue;
       if (d < record) {
         record = d;
         closest = i;
@@ -57,9 +71,31 @@ class Cell {
     }
     if (record < 5) {
       list.splice(closest, 1);
-      this.mitosis();
+      this.mitosis(normalCells);
     }
     this.seek(list[closest]);
+  }
+
+  eatCell(list) {
+    let record = Infinity;
+    let closest = null;
+    for (let i = 0; i < list.length; i++) {
+      const d = this.position.dist(list[i].position);
+      if (d > virusVision) continue;
+      if (d < record) {
+        record = d;
+        closest = i;
+      }
+    }
+    if (closest === null) return;
+
+    this.seek(list[closest].position);
+
+    if (record < 5) {
+      list.splice(closest, 1);
+      this.mitosis(viruses);
+      this.mitosis(viruses);
+    }
   }
 
   applyForce(force) {
@@ -88,18 +124,7 @@ class Cell {
     this.applyForce(randomVector);
   }
 
-  mitosis() {
-    entities.push(new Cell(this.position.copy()));
+  mitosis(list) {
+    list.push(new Cell(this.position.copy()));
   }
 }
-
-// moveTo(x, y) {
-//   const dx = x - this.x;
-//   const dy = y - this.y;
-//   const angle = atan2(dy, dx);
-
-//   this.acceleration.x = cos(angle) * 0.8;
-//   this.acceleration.y = sin(angle) * 0.8;
-
-//   this.acceleration.limit(this.maxSpeed);
-// }

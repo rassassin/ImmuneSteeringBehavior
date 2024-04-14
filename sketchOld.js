@@ -4,7 +4,7 @@ let qt;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  qt = new QuadTree(0, 0, windowWidth, windowHeight);
+  cellQuadTree = new QuadTree(0, 0, windowWidth, windowHeight);
 
   for (let i = 0; i < 10; i++) {
     cellCount.push(new Cell(random(Number), random(Number)));
@@ -16,7 +16,7 @@ function setup() {
 }
 
 function draw() {
-  qt = new QuadTree(0, 0, windowWidth, windowHeight);
+  cellQuadTree = new QuadTree(0, 0, windowWidth, windowHeight);
   background(51);
 
   // Draw Nutrients
@@ -27,13 +27,13 @@ function draw() {
 
   // Draw cells
   for (const cell of cellCount) {
-    qt.add(cell);
+    cellQuadTree.add(cell);
     cell.eat(nutrients);
-    cell.update(qt); // implement steering towards nutrients
+    cell.update(cellQuadTree); // implement steering towards nutrients
     cell.display();
   }
 
-  qt.show();
+  cellQuadTree.show();
 }
 
 /* 

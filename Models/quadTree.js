@@ -94,16 +94,16 @@ class QuadTree {
     );
   }
 
-  show() {
+  show(red, green, blue) {
     for (const key in this.nodes) {
       const node = this.nodes[key];
       if (Array.isArray(node)) {
         for (const entity of node) {
-          entity.show();
+          entity.show(red, green, blue);
         }
         continue;
       }
-      node.show();
+      node.show(red, green, blue);
     }
   }
 }

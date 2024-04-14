@@ -1,38 +1,65 @@
-let entities = [];
-// const types = ["rock", "paper", "scissors"];
+let normalCells = [];
+let viruses = [];
 let nutrients = [];
-const cellCount = 10;
+const cellCount = 1000;
+const virusCount = 1;
 const nutrientCount = 50;
-let qt;
+let cellQuadTree;
+let virusQuadTree;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  qt = new QuadTree(0, 0, windowWidth, windowHeight);
+  cellQuadTree = new QuadTree(0, 0, windowWidth, windowHeight);
+  virusQuadTree = new QuadTree(0, 0, windowWidth, windowHeight);
 
-  for (let i = 0; i < nutrientCount; i++) {
-    nutrients.push(createVector(random(width), random(height)));
-  }
+  createStillEntities(nutrients, nutrientCount);
 
   for (let i = 0; i < cellCount; i++) {
-    entities.push(new Cell());
+    normalCells.push(new Cell());
+  }
+
+  for (let i = 0; i < virusCount; i++) {
+    viruses.push(new Cell());
   }
 }
 
 function draw() {
-  qt = new QuadTree(0, 0, windowWidth, windowHeight);
+  cellQuadTree = new QuadTree(0, 0, windowWidth, windowHeight);
+  virusQuadTree = new QuadTree(0, 0, windowWidth, windowHeight);
   background(220);
 
   for (const nutrient of nutrients) {
-    fill(color(255, 0, 0, 100));
+    noStroke();
+    fill(color(0, 0, 255, 100));
     ellipse(nutrient.x, nutrient.y, 10, 10);
   }
 
-  for (const entity of entities) {
-    qt.add(entity);
+  for (const cell of normalCells) {
+    cellQuadTree.add(cell);
   }
-  for (const entity of entities) {
-    entity.eat(nutrients);
-    entity.update(qt);
+
+  for (const virus of viruses) {
+    virusQuadTree.add(virus);
   }
-  qt.show();
+
+  for (const cell of normalCells) {
+    cell.eatNutrients(nutrients);
+    cell.update(cellQuadTree);
+  }
+
+  for (const virus of viruses) {
+    virus.eatCell(normalCells);
+    virus.update(virusQuadTree);
+  }
+
+  cellQuadTree.show(0, 255, 0);
+  virusQuadTree.show(255, 0, 0);
+}
+
+setInterval(() => createStillEntities(nutrients, 1), 1000 * 30);
+
+function createStillEntities(entityList, entityCount) {
+  for (let i = 0; i < entityCount; i++) {
+    entityList.push(createVector(random(width), random(height)));
+  }
 }
