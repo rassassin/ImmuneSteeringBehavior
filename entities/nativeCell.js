@@ -1,24 +1,23 @@
-const maxSpeed = 2;
-const maxForce = 0.3;
+const jiggleForce = 0.3;
 const cellVision = 50;
 const virusVision = 30;
-const showVision = false;
+let lymphocyteVision = 60;
+const lymphocyteIncreasedVision = 200;
+let showVision = true;
 
 class Cell {
-  constructor(position) {
-    this.range = 100;
-    this.diameter = 10;
-    this.velocity = {
-      x: (Math.random() * maxSpeed) / (Math.random() < 0.5 ? 2 : -2),
-      y: (Math.random() * maxSpeed) / (Math.random() < 0.5 ? 2 : -2),
-    };
+  constructor(position, vision) {
+    this.maxSpeed = 2;
+    this.maxForce = 0.3;
+    this.diameter = 15;
     this.acceleration = createVector(0, 0);
     this.velocity = createVector(
-      Math.random() * maxSpeed,
-      Math.random() * maxSpeed
+      Math.random() * this.maxSpeed,
+      Math.random() * this.maxSpeed
     );
     this.position =
       position ?? createVector(random(windowWidth), random(windowHeight));
+    this.vision = vision ?? cellVision;
   }
 
   show(red, green, blue) {
@@ -31,11 +30,7 @@ class Cell {
       strokeWeight(1);
       stroke(red, green, blue);
 
-      circle(
-        this.position.x,
-        this.position.y,
-        red > 0 ? virusVision : cellVision
-      );
+      circle(this.position.x, this.position.y, this.vision);
     }
   }
 
@@ -43,7 +38,7 @@ class Cell {
     this.jiggle();
     this.velocity.add(this.acceleration);
     // Limit speed
-    this.velocity.limit(maxSpeed);
+    this.velocity.limit(this.maxSpeed);
     this.position.add(this.velocity);
     // Reset accelerationelertion to 0 each cycle
     this.acceleration.mult(0);
@@ -58,30 +53,47 @@ class Cell {
       this.position.y -= window.innerHeight;
   }
 
-  eatNutrients(list) {
+  eatNutrients(list, entity) {
+    const vision = entity === lymphocytes ? lymphocyteVision : cellVision;
+    if (this.vision === lymphocyteIncreasedVision) return;
     let record = Infinity;
     let closest = null;
     for (let i = 0; i < list.length; i++) {
-      const d = this.position.dist(list[i]);
-      if (d > cellVision) continue;
+      const d = this.position.dist(list[i].position);
+      if (d > vision) continue;
       if (d < record) {
         record = d;
         closest = i;
       }
     }
+
+    if (closest === null) return;
+
+    this.seek(list[closest].position);
+
     if (record < 5) {
       list.splice(closest, 1);
-      this.mitosis(normalCells);
+      if (vision === cellVision) this.mitosis(normalCells);
+      if (vision === lymphocyteVision) {
+        this.vision = lymphocyteIncreasedVision;
+        this.maxSpeed *= 1.5;
+        this.maxForce /= 0.6;
+        setTimeout(() => {
+          this.maxSpeed = 2;
+          this.maxForce = 0.3;
+          this.vision = lymphocyteVision;
+        }, 1000 * 7);
+      }
     }
-    this.seek(list[closest]);
   }
 
-  eatCell(list) {
+  eatCell(list, entity) {
+    const vision = entity === viruses ? virusVision : lymphocyteVision;
     let record = Infinity;
     let closest = null;
     for (let i = 0; i < list.length; i++) {
       const d = this.position.dist(list[i].position);
-      if (d > virusVision) continue;
+      if (d > vision) continue;
       if (d < record) {
         record = d;
         closest = i;
@@ -91,17 +103,22 @@ class Cell {
 
     this.seek(list[closest].position);
 
+    let chanceChemokineCreation = Math.floor(Math.random() * 11);
+
     if (record < 5) {
       list.splice(closest, 1);
-      this.mitosis(viruses);
-      this.mitosis(viruses);
+      if (entity === viruses) {
+        this.mitosis(entity, virusVision);
+        this.mitosis(entity, virusVision);
+        if (chanceChemokineCreation > 8) this.createChemokine();
+      }
     }
   }
 
   applyForce(force) {
     // We could add mass here if we want A = F / M
     this.acceleration.add(force);
-    this.acceleration.limit(maxForce);
+    this.acceleration.limit(this.maxForce);
   }
 
   seek(target) {
@@ -109,22 +126,26 @@ class Cell {
     const desired = p5.Vector.sub(target, this.position); // A vector pointing from the location to the target
 
     // Scale to maximum speed
-    desired.setMag(maxSpeed);
+    desired.setMag(this.maxSpeed);
 
     // Steering = Desired minus velocity
     const steer = p5.Vector.sub(desired, this.velocity);
-    steer.limit(maxForce); // Limit to maximum steering force
+    steer.limit(this.maxForce); // Limit to maximum steering force
 
     this.applyForce(steer);
   }
 
   jiggle() {
-    const num = maxForce * 3;
+    const num = jiggleForce * 3;
     const randomVector = createVector(random(-num, num), random(-num, num));
     this.applyForce(randomVector);
   }
 
-  mitosis(list) {
-    list.push(new Cell(this.position.copy()));
+  mitosis(list, vision) {
+    list.push(new Cell(this.position.copy(), vision));
+  }
+
+  createChemokine() {
+    chemokines.push(new Chemokine(this.position.copy()));
   }
 }
