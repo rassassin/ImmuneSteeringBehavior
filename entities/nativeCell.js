@@ -4,20 +4,21 @@ const virusVision = 30;
 let lymphocyteVision = 60;
 const lymphocyteIncreasedVision = 200;
 let showVision = true;
+const lymphocyteKillThreshold = 4;
+const lymphocyteLife = 3600;
 
 class Cell {
-  constructor(position, vision) {
+  constructor(position, vision, original = true) {
     this.maxSpeed = 2;
     this.maxForce = 0.3;
     this.diameter = 15;
     this.acceleration = createVector(0, 0);
-    this.velocity = createVector(
-      Math.random() * this.maxSpeed,
-      Math.random() * this.maxSpeed
-    );
-    this.position =
-      position ?? createVector(random(windowWidth), random(windowHeight));
+    this.velocity = createVector(Math.random() * this.maxSpeed, Math.random() * this.maxSpeed);
+    this.position = position ?? createVector(random(windowWidth), random(windowHeight));
     this.vision = vision ?? cellVision;
+    this.eatCount = 0;
+    this.original = original;
+    this.life = lymphocyteLife;
   }
 
   show(red, green, blue) {
@@ -35,6 +36,9 @@ class Cell {
   }
 
   update() {
+    if (this.vision === lymphocyteVision && !this.original) {
+      this.life--;
+    }
     this.jiggle();
     this.velocity.add(this.acceleration);
     // Limit speed
@@ -43,14 +47,10 @@ class Cell {
     // Reset accelerationelertion to 0 each cycle
     this.acceleration.mult(0);
 
-    if (this.position.x < 0)
-      this.position.x = window.innerWidth + this.position.x;
-    if (this.position.x > window.innerWidth)
-      this.position.x -= window.innerWidth;
-    if (this.position.y < 0)
-      this.position.y = window.innerHeight + this.position.y;
-    if (this.position.y > window.innerHeight)
-      this.position.y -= window.innerHeight;
+    if (this.position.x < 0) this.position.x = window.innerWidth + this.position.x;
+    if (this.position.x > window.innerWidth) this.position.x -= window.innerWidth;
+    if (this.position.y < 0) this.position.y = window.innerHeight + this.position.y;
+    if (this.position.y > window.innerHeight) this.position.y -= window.innerHeight;
   }
 
   eatNutrients(list, entity) {
@@ -112,6 +112,14 @@ class Cell {
         this.mitosis(entity, virusVision);
         if (chanceChemokineCreation > 8) this.createChemokine();
       }
+      if (entity === lymphocytes) {
+        this.eatCount++;
+        if (this.eatCount > lymphocyteKillThreshold) {
+          this.eatCount = 0;
+          this.life = lymphocyteLife;
+          this.mitosis(entity, lymphocyteVision);
+        }
+      }
     }
   }
 
@@ -142,7 +150,7 @@ class Cell {
   }
 
   mitosis(list, vision) {
-    list.push(new Cell(this.position.copy(), vision));
+    list.push(new Cell(this.position.copy(), vision, false));
   }
 
   createChemokine() {

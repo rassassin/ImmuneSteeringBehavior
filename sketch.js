@@ -1,6 +1,9 @@
 let normalCellCount = document.getElementById("normalCellCount");
 let buttonPos;
 let toggleEntityVisionButton;
+let lastVirusSeen = Date.now();
+const maxNormalCells = 40;
+const virusDelay = 10000;
 
 let normalCells = [];
 let viruses = [];
@@ -10,11 +13,13 @@ let chemokines = [];
 const cellCount = 10;
 const virusCount = 0;
 const nutrientCount = 5;
-const lymphocyteCount = 15;
+const lymphocyteCount = 10;
 let cellQuadTree;
 let virusQuadTree;
 let lymphocyteQuadTree;
 let nutrientQuadTree;
+
+const getRandomPosition = () => createVector(random(0, windowWidth), random(0, windowHeight));
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -92,10 +97,18 @@ function draw() {
     cell.update(cellQuadTree);
   }
 
-  for (const lymphocyte of lymphocytes) {
+  for (let i = lymphocytes.length - 1; i >= 0; i--) {
+    const lymphocyte = lymphocytes[i];
     lymphocyte.eatCell(viruses, lymphocytes);
     lymphocyte.eatNutrients(chemokines, lymphocytes);
     lymphocyte.update(lymphocyteQuadTree);
+    if (lymphocyte.life < 1 && !lymphocyte.original) {
+      lymphocytes.splice(i, 1);
+    }
+  }
+
+  if (viruses.length === 0 && normalCells.length > maxNormalCells && Date.now() - lastVirusSeen > virusDelay) {
+    viruses.push(new Cell(getRandomPosition(), virusVision));
   }
 
   for (const virus of viruses) {
@@ -108,6 +121,8 @@ function draw() {
   lymphocyteQuadTree.show(160, 160, 50);
   nutrientQuadTree.show(0, 0, 255);
   chemokinesQuadTree.show(255, 255, 0);
+  if (viruses.length > 0) lastVirusSeen = Date.now();
+  else if (normalCells.length === 0) normalCells.push(new Cell(getRandomPosition()));
 }
 
 setInterval(() => nutrients.push(new Chemokine()), 1000 * 5);
