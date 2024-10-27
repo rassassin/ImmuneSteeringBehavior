@@ -10,7 +10,7 @@ let chemokines = [];
 const cellCount = 10;
 const virusCount = 0;
 const nutrientCount = 5;
-const lymphocyteCount = 3;
+const lymphocyteCount = 15;
 let cellQuadTree;
 let virusQuadTree;
 let lymphocyteQuadTree;
@@ -60,14 +60,8 @@ function draw() {
   let mousePosition = createVector(mouseX, mouseY);
 
   if (mouseIsPressed === true) {
-    if (
-      mouseX <= 50 ||
-      mouseX >= 50 + toggleEntityVisionButton.width ||
-      mouseY <= 100 ||
-      mouseY >= 100 + toggleEntityVisionButton.height
-    ) {
-      if (mouseButton === LEFT)
-        viruses.push(new Cell(mousePosition, virusVision));
+    if (mouseX <= 50 || mouseX >= 50 + toggleEntityVisionButton.width || mouseY <= 100 || mouseY >= 100 + toggleEntityVisionButton.height) {
+      if (mouseButton === LEFT) viruses.push(new Cell(mousePosition, virusVision));
       if (mouseButton === CENTER) nutrients.push(new Chemokine(mousePosition));
       if (mouseButton === RIGHT) normalCells.push(new Cell(mousePosition));
     }
@@ -122,13 +116,7 @@ function showHud() {
   const leftPadding = 50;
   const topPadding = 50;
   const gap = 50;
-  const strings = [
-    `Number of Lymphocytes: ${lymphocytes.length}`,
-    `Number of Viruses: ${viruses.length}`,
-    `Number of Cells: ${normalCells.length}`,
-    `Number of Nutrients: ${nutrients.length}`,
-    `Number of Chemokines: ${chemokines.length}`,
-  ];
+  const strings = [`Number of Lymphocytes: ${lymphocytes.length}`, `Number of Viruses: ${viruses.length}`, `Number of Cells: ${normalCells.length}`, `Number of Nutrients: ${nutrients.length}`, `Number of Chemokines: ${chemokines.length}`];
   noStroke();
   fill("black");
   let position = leftPadding;
